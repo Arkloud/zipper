@@ -1,35 +1,6 @@
-/*************************************************************************
- *  Compilation:  javac CRC32.java
- *  Execution:    java CRC32 s
- *  
- *  Reads in a string s as a command-line argument, and prints out
- *  its 32 bit Cyclic Redundancy Check (CRC32 or Ethernet / AAL5 or ITU-TSS).
- *
- *  Uses direct table lookup, calculation, and Java library.
- *
- *  % java CRC32 123456789
- *  CRC32 (via table lookup)       = cbf43926
- *  CRC32 (via direct calculation) = cbf43926
- *  CRC32 (via Java's library)     = cbf43926
- *
- *
- *
- *  Uses irreducible polynomial:
- *     1    + x    + x^2  + x^4  + x^5  + x^7  + x^8  +
- *     x^10 + x^11 + x^12 + x^16 + x^22 + x^23 + x^26 
- *
- *  0000 0100 1100 0001 0001 1101 1011 0111                 
- *   0    4    C    1    1    D    B    7
- *
- *  The reverse of this polynomial is
- *
- *   0    2    3    8    8    B    D    E
- *
- *
- *
- *************************************************************************/
-
-
+//
+//Copyright (c) 2015 Pedro Dal Col, Pliny Smith
+//
 public class HexUtil { 
 
     private static final Integer[] table = new List<Integer> { 
@@ -68,13 +39,6 @@ public class HexUtil {
 
     public static Integer CRC32Table(Blob data) 
     { 
-
-       /**************************************************************************
-        *  Using table lookup
-        *  Reference: http://snippets.dzone.com/tag/crc32
-        **************************************************************************/
-
-        //String hexString = EncodingUtil.convertToHex(data);
         Integer[] intArr = EncodingUtil.convertToHex(data).getChars();
         data = null;
         Integer b = 0;
@@ -93,18 +57,12 @@ public class HexUtil {
         // flip bits
         crc = crc ^ -1; //hexToInt('ffffffff');
 
-        //System.debug('CRC32 - table = ' + intToHexLE(crc,4));// + '    ' + (crc & 4294967295L));
+        //System.debug('CRC32 = ' + intToHexLE(crc,4));// + '    ' + (crc & 4294967295L));
         return crc;
     }
 
     public static Integer CRC32Table(String hexStr) 
     { 
-
-       /**************************************************************************
-        *  Using table lookup
-        *  Reference: http://snippets.dzone.com/tag/crc32
-        **************************************************************************/
-
         Integer b = 0;
         Integer crc = -1;  //hexToInt('ffffffff');
         Integer size = hexStr.length();
@@ -121,18 +79,12 @@ public class HexUtil {
         // flip bits
         crc = crc ^ -1; //hexToInt('ffffffff');
 
-        //System.debug('CRC32 - table = ' + intToHexLE(crc,4));// + '    ' + (crc & 4294967295L));
+        //System.debug('CRC32 = ' + intToHexLE(crc,4));// + '    ' + (crc & 4294967295L));
         return crc;
     }
 /*
-    public static Integer CRC32Table(Zipper.FileObject fObj) 
+    public static Integer CRC32Table(Zippex.FileObject fObj) 
     { 
-
-       /**************************************************************************
-        *  Using table lookup
-        *  Reference: http://snippets.dzone.com/tag/crc32
-        **************************************************************************/
-/*
         //String hexString = EncodingUtil.convertToHex(data);
         //Integer[] intArr = new List<Integer>();//fObj.fileData.getChars();
         //hexStr = null;
@@ -152,13 +104,10 @@ public class HexUtil {
         // flip bits
         crc = crc ^ -1; //hexToInt('ffffffff');
 
-        System.debug('CRC32 - table = ' + intToHexLE(crc,4));// + '    ' + (crc & 4294967295L));
+        System.debug('CRC32 = ' + intToHexLE(crc,4));// + '    ' + (crc & 4294967295L));
         return crc;
     }*/
 
-    /**************************************************************************
-    *  Using direct calculation
-    **************************************************************************/
     //public static Integer CRC32Calc_slow (Blob data) 
     //{
     //    Integer crc = -1; //hexToInt('ffffffff');
@@ -187,25 +136,14 @@ public class HexUtil {
     //    // flip bits
     //    crc = crc ^ -1;//hexToInt('ffffffff');
 
-    //    System.debug('CRC32 (via direct calculation) = ' + intToHexLE(crc,4));
+    //    System.debug('CRC32 = ' + intToHexLE(crc,4));
     //    return crc;
 
     //}
-
-    //public static Integer hexToInt(String hexStr){
-    //    Integer result = 0;
-
-    //    for (Integer j = 0; j < hexStr.length(); j+=2){
-    //        result |= (((hexStr.charAt(j  ) & 15)+(hexStr.charAt(j  )>>>6)*9)) << (4*(hexStr.length()-j-1));
-    //        result |= (((hexStr.charAt(j+1) & 15)+(hexStr.charAt(j+1)>>>6)*9)) << (4*(hexStr.length()-j-2));
-    //    }
-
-    //    return result;
-    //}
     
-    //Hex to Long Little Endian
-    public static Long hexToLongLE(String hexStr){
-        Long mask = 4294967295L; //FFFFFFFF
+    //Hex to Int Little Endian
+    public static Integer hexToIntLE(String hexStr){
+        //Long mask = 4294967295L; //FFFFFFFF
         Integer result = 0;
 
         for (Integer j = 0; j < hexStr.length(); j+=2){
@@ -213,7 +151,8 @@ public class HexUtil {
             result |= (((hexStr.charAt(j+1) & 15)+(hexStr.charAt(j+1)>>>6)*9)) << (4*(j  ));
         }
 
-        return result & mask;
+        //return (result & mask); //remove sign from int
+        return result;
     }
 
     //Int to Little Endian Hex

@@ -1,113 +1,21 @@
+//
+//Copyright (c) 2015 Pedro Dal Col, Pliny Smith
+//
+//Puff.cls based on Mark Adler's puff.c
+//
 public class Puff {
-        /*
-     * puff.c
-     * Copyright (C) 2002-2013 Mark Adler
-     * For conditions of distribution and use, see copyright notice in puff.h
-     * version 2.3, 21 Jan 2013
-     *
-     * puff.c is a simple inflate written to be an unambiguous way to specify the
-     * deflate format.  It is not written for speed but rather simplicity.  As a
-     * side benefit, this code might actually be useful when small code is more
-     * important than speed, such as bootstrap applications.  For typical deflate
-     * data, zlib's inflate() is about four times as fast as puff().  zlib's
-     * inflate compiles to around 20K on my machine, whereas puff.c compiles to
-     * around 4K on my machine (a PowerPC using GNU cc).  If the faster decode()
-     * function here is used, then puff() is only twice as slow as zlib's
-     * inflate().
-     *
-     * All dynamically allocated memory comes from the stack.  The stack required
-     * is less than 2K bytes.  This code is compatible with 16-bit int's and
-     * assumes that long's are at least 32 bits.  puff.c uses the short data type,
-     * assumed to be 16 bits, for arrays in order to to conserve memory.  The code
-     * works whether integers are stored big endian or little endian.
-     *
-     * In the comments below are "Format notes" that describe the inflate process
-     * and document some of the less obvious aspects of the format.  This source
-     * code is meant to supplement RFC 1951, which formally describes the deflate
-     * format:
-     *
-     *    http://www.zlib.org/rfc-deflate.html
-     */
+    private final Integer MAXBITS = 15;             /* maximum bits in a code */
+    private final Integer MAXLCODES = 286;           /* maximum number of literal/length codes */
+    private final Integer MAXDCODES = 30;            /* maximum number of distance codes */
+    private final Integer MAXCODES = (MAXLCODES+MAXDCODES);  /* maximum codes lengths to read */
+    private final Integer FIXLCODES = 288;           /* number of fixed literal/length codes */
 
-    /*
-     * Change history:
-     *
-     * 1.0  10 Feb 2002     - First version
-     * 1.1  17 Feb 2002     - Clarifications of some comments and notes
-     *                      - Update puff() dest and source pointers on negative
-     *                        errors to facilitate debugging deflators
-     *                      - Remove longest from struct huffman -- not needed
-     *                      - Simplify offs[] index in construct()
-     *                      - Add input size and checking, using longjmp() to
-     *                        maintain easy readability
-     *                      - Use short data type for large arrays
-     *                      - Use pointers instead of long to specify source and
-     *                        destination sizes to avoid arbitrary 4 GB limits
-     * 1.2  17 Mar 2002     - Add faster version of decode(), doubles speed (!),
-     *                        but leave simple version for readabilty
-     *                      - Make sure invalid distances detected if pointers
-     *                        are 16 bits
-     *                      - Fix fixed codes table error
-     *                      - Provide a scanning mode for determining size of
-     *                        uncompressed data
-     * 1.3  20 Mar 2002     - Go back to lengths for puff() parameters [Gailly]
-     *                      - Add a puff.h file for the interface
-     *                      - Add braces in puff() for else do [Gailly]
-     *                      - Use indexes instead of pointers for readability
-     * 1.4  31 Mar 2002     - Simplify construct() code set check
-     *                      - Fix some comments
-     *                      - Add FIXLCODES #define
-     * 1.5   6 Apr 2002     - Minor comment fixes
-     * 1.6   7 Aug 2002     - Minor format changes
-     * 1.7   3 Mar 2003     - Added test code for distribution
-     *                      - Added zlib-like license
-     * 1.8   9 Jan 2004     - Added some comments on no distance codes case
-     * 1.9  21 Feb 2008     - Fix bug on 16-bit integer architectures [Pohland]
-     *                      - Catch missing end-of-block symbol error
-     * 2.0  25 Jul 2008     - Add #define to permit distance too far back
-     *                      - Add option in TEST code for puff to write the data
-     *                      - Add option in TEST code to skip input bytes
-     *                      - Allow TEST code to read from piped stdin
-     * 2.1   4 Apr 2010     - Avoid variable initialization for happier compilers
-     *                      - Avoid unsigned comparisons for even happier compilers
-     * 2.2  25 Apr 2010     - Fix bug in variable initializations [Oberhumer]
-     *                      - Add const where appropriate [Oberhumer]
-     *                      - Split if's and ?'s for coverage testing
-     *                      - Break out test code to separate file
-     *                      - Move NIL to puff.h
-     *                      - Allow incomplete code only if single code length is 1
-     *                      - Add full code coverage test to Makefile
-     * 2.3  21 Jan 2013     - Check for invalid code length codes in dynamic blocks
-     */
-
-    //#include <setjmp.h>             /* for setjmp(), longjmp(), and jmp_buf */
-    //#include "puff.h"               /* prototype for puff() */
-
-    //#define local static            /* for local function definitions */
-
-    ///*
-    // * Maximums for allocations and loops.  It is not useful to change these --
-    // * they are fixed by the deflate format.
-    // */
-    public final Integer MAXBITS = 15;             /* maximum bits in a code */
-    public final Integer MAXLCODES = 286;           /* maximum number of literal/length codes */
-    public final Integer MAXDCODES = 30;            /* maximum number of distance codes */
-    public final Integer MAXCODES = (MAXLCODES+MAXDCODES);  /* maximum codes lengths to read */
-    public final Integer FIXLCODES = 288;           /* number of fixed literal/length codes */
-
-    public Integer[] getIntArray(Integer size){
-        //System.debug('Called getintArray. Size: '+size);
+    private Integer[] getIntArray(Integer size){
 
         return (Integer[]) JSON.deserialize('['+'0'.repeat(',',size) +']', Integer[].class);
-
-        //Integer[] arr = new List<Integer>();
-        //for (Integer i=0; i<=size; i++){
-        //    arr.add(0);
-        //}
-        //return arr;
     }
 
-    public Integer[] removeNElems(Integer[] arr, Integer n){
+    private Integer[] removeNElems(Integer[] arr, Integer n){
         Integer[] newArr = new List<Integer>(arr);
 
         for(Integer i = 0; i<n; i++){
@@ -118,7 +26,7 @@ public class Puff {
     }
 
     ///* input and output state */
-    public class State {
+    private class State {
         /* output state */
         public String out;         /* output buffer */
         public Integer outlen;       /* available space at out */
@@ -131,9 +39,6 @@ public class Puff {
         public Integer bitbuf;                 /* bit buffer */
         public Integer bitcnt;                 /* number of bits in bit buffer */
 
-        /* input limit error return state for bits() and decode() */
-        //jmp_buf env;
-        Integer env=0;
     }
 
     /*
@@ -147,24 +52,17 @@ public class Puff {
      *   buffer, using shift right, and new bytes are appended to the top of the
      *   bit buffer, using shift left.
      */
-    public Integer bits(State s, Integer need)
+    private Integer bits(State s, Integer need)
     {
         Long val;           /* bit accumulator (can use up to 20 bits) */
         Integer incnt2;
         ///* load at least need bits into val */
         val = s.bitbuf;
         while (s.bitcnt < need) {
-             //System.assert (s.incnt <= s.inlen, 'out of input');
-        
-            //val |= (long)(s->in[s->incnt++]) << s->bitcnt;  /* load eight bits */
             incnt2 = s.incnt++ *2;
-            //val |= HexUtil.hexToInt(s.inStr.mid(s.incnt++ *2, 2)) << s.bitcnt;/////this is really slow
-            //val |= hexToLong(s.inStr.mid(s.incnt++ *2, 2)) << s.bitcnt;
             val |= (((s.inStr.charAt(incnt2) & 15)+(s.inStr.charAt(incnt2)>>>6)*9) * 16
                 | (s.inStr.charAt(incnt2+1) & 15)+(s.inStr.charAt(incnt2+1)>>>6) * 9) << s.bitcnt;
             
-            //s.incnt++;
-
             s.bitcnt += 8;
         }
 
@@ -172,22 +70,13 @@ public class Puff {
         s.bitbuf = (Integer)(val >>> need);
         s.bitcnt -= need;
 
-        //System.debug('reading '+need+' bit(s) result: '+(Integer)(val & ((1L << need) - 1)));
         ///* return need bits, zeroing the bits above that */
         return (Integer)(val & ((1L << need) - 1));
     }
 
-    Long hexToLong (String hexStr){
-        //Integer[] intArr = hexStr.getChars();
-
-        //if (String.isEmpty(hexStr)) return 0;
-        //if (intArr.size()==0) return 0;
-
+    private Long hexToLong (String hexStr){
         return ((hexStr.charAt(0) & 15)+(hexStr.charAt(0)>>>6)*9) * 16
               + (hexStr.charAt(1) & 15)+(hexStr.charAt(1)>>>6) * 9;
-
-        //return ((intArr[0] & 15)+(intArr[0]>>>6)*9) * 16
-        //      + (intArr[1] & 15)+(intArr[1]>>>6) * 9;
     }
 
     /*
@@ -209,8 +98,6 @@ public class Puff {
      */
     private Integer stored(State s)
     {
-        //System.debug('called stored()');
-
         Integer len;       /* length of stored block */
 
         /* discard leftover bits from current byte (assumes s->bitcnt < 8) */
@@ -222,28 +109,15 @@ public class Puff {
             return 2;                               /* not enough input */
         len = (Integer)hexToLong(s.inStr.mid(s.incnt++ *2, 2));
         len |= (Integer)hexToLong(s.inStr.mid(s.incnt++ *2, 2)) << 8;
-        //if ((Integer)hexToLong(s.inStr.mid(s.incnt++ *2, 2)) != (~len & 255) ||
-        //    (Integer)hexToLong(s.inStr.mid(s.incnt++ *2, 2)) != ((~len >>> 8) & 255))
-        //    return -2;                              // didn't match complement! 
         s.incnt++;
         s.incnt++;
         
         /* copy len bytes from in to out */
-        //if (s.incnt + len > s.inlen)
-        //    return 2;                               /* not enough input */
-        //if (s.out != null) {
-            //if (s.outcnt + len > s.outlen)
-            //    return 1;                           /* not enough output space */
-            while (len-- != 0) {
-                s.out += s.inStr.mid(s.incnt++ *2, 2);
-                s.outcnt++;
-                //s.out[s.outcnt++] = s.inStr[s.incnt++];
-            }
-        //}
-        //else {                                       //just scanning 
-        //    s.outcnt += len;
-        //    s.incnt += len;
-        //}
+        while (len-- != 0) {
+            s.out += s.inStr.mid(s.incnt++ *2, 2);
+            s.outcnt++;
+            //s.out[s.outcnt++] = s.inStr[s.incnt++];
+        }
 
         /* done with a valid stored block */
         return 0;
@@ -285,30 +159,30 @@ public class Puff {
      *   in the deflate format.  See the format notes for fixed() and dynamic().
      */
     //#ifdef SLOW
-    private Integer decodeSlow(State s, Huffman h) //Slow
-    {
-        //System.debug('called decode slow()');
+    //private Integer decodeSlow(State s, Huffman h) //Slow
+    //{
+    //    //System.debug('called decode slow()');
 
-        Integer len;            /* current number of bits in code */
-        Integer code;           /* len bits being decoded */
-        Integer first;          /* first code of length len */
-        Integer count;          /* number of codes of length len */
-        Integer index;          /* index of first code of length len in symbol table */
+    //    Integer len;            /* current number of bits in code */
+    //    Integer code;           /* len bits being decoded */
+    //    Integer first;          /* first code of length len */
+    //    Integer count;          /* number of codes of length len */
+    //    Integer index;          /* index of first code of length len in symbol table */
 
-        code = first = index = 0;
-        for (len = 1; len <= MAXBITS; len++) {
-            code |= bits(s, 1);             /* get next bit */
-            count = h.count[len];
-            if (code - count < first)       /* if length len, return symbol */
-                return h.symbol[index + (code - first)];
-            index += count;                 /* else update for next length */
-            first += count;
-            first <<= 1;
-            code <<= 1;
-        }
-        return -10;                         /* ran out of codes */
-    }
-
+    //    code = first = index = 0;
+    //    for (len = 1; len <= MAXBITS; len++) {
+    //        code |= bits(s, 1);             /* get next bit */
+    //        count = h.count[len];
+    //        if (code - count < first)       /* if length len, return symbol */
+    //            return h.symbol[index + (code - first)];
+    //        index += count;                 /* else update for next length */
+    //        first += count;
+    //        first <<= 1;
+    //        code <<= 1;
+    //    }
+    //    return -10;                         /* ran out of codes */
+    //}
+    
     /*
      * A faster version of decode() for real applications of this code.   It's not
      * as readable, but it makes puff() twice as fast.  And it only makes the code
@@ -317,8 +191,6 @@ public class Puff {
     //#else /* !SLOW */
     public Integer decode(State s, Huffman h) //Fast
     {
-        //System.debug('called decode fast()');
-
         Integer len;            /* current number of bits in code */
         Integer code;           /* len bits being decoded */
         Integer first;          /* first code of length len */
@@ -352,10 +224,6 @@ public class Puff {
             left = (MAXBITS+1) - len;
             if (left == 0)
                 break;
-            //if (s.incnt == s.inlen)
-            //    System.assert(false,'out of input');
-                //longjmp(s.env, 1);         /* out of input */
-            //bitbuf = s.inStr[s.incnt++];
             bitbuf = (Integer)hexToLong(s.inStr.mid(s.incnt++ *2, 2));
             if (left > 8)
                 left = 8;
@@ -399,8 +267,6 @@ public class Puff {
      */
     private Integer construct(Huffman h, Integer[] length, Integer n)
     {
-        //System.debug('called construct()');
-
         Integer symbol;         /* current symbol when stepping through length[] */
         Integer len;            /* current length when stepping through h->count[] */
         Integer left;           /* number of possible codes left of current length */
@@ -426,7 +292,7 @@ public class Puff {
         /* generate offsets into symbol table for each length for sorting */
         offs[1] = 0;
         for (len = 1; len < MAXBITS; len++)
-        offs[len + 1] = offs[len] + h.count[len];
+            offs[len + 1] = offs[len] + h.count[len];
 
         /*
          * put symbols in table sorted by length, by symbol order within each
@@ -434,16 +300,8 @@ public class Puff {
          */
         for (symbol = 0; symbol < n; symbol++)
             if (length[symbol] != 0) {
-                //System.debug('symbol: '+symbol);
-                
-                //h.symbol[offs[length[symbol]]++] = symbol;
                 h.symbol[offs[length[symbol]]] = symbol;
                 offs[length[symbol]]++;
-
-                //System.debug('after off: '+offs[length[symbol]]);
-                //System.debug('after length: '+length[symbol]);
-                //System.debug('after symb: '+symbol);
-
             }
 
         /* return zero for complete set, positive for incomplete set */
@@ -524,8 +382,6 @@ public class Puff {
                     Huffman lencode,
                     Huffman distcode)
     {
-        //System.debug('called codes()');
-
         Integer symbol;         /* decoded symbol */
         Integer len;            /* length for copy */
         Integer dist;      /* distance for copy */
@@ -538,12 +394,7 @@ public class Puff {
                 return symbol;              /* invalid symbol */
             if (symbol < 256) {             /* literal: symbol is the byte */
                 /* write out the literal */
-                //if (s.out != null) {
-                    //if (s.outcnt == s.outlen)
-                    //    return 100;
-                    //s.out[s.outcnt] = symbol; ////
-                    s.out += HexUtil.intToHexLE(symbol, 1);
-                //}
+                s.out += HexUtil.intToHexLE(symbol, 1);
                 s.outcnt++;
             }
             else if (symbol > 256) {        /* length */
@@ -558,11 +409,6 @@ public class Puff {
                 //if (symbol < 0)
                 //    return symbol;          /* invalid symbol */
                 dist = dists[symbol] + bits(s, dext[symbol]);
-    //#ifndef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
-    //            if (dist > s->outcnt)
-    //                return -11;     /* distance too far back */
-    //#endif
-
                 /* copy length bytes from distance bytes back */
                 //if (s.out != null) {
                     //if (s.outcnt + len > s.outlen)
@@ -570,11 +416,9 @@ public class Puff {
                     while (len-- != 0) {
                         //s.out[s.outcnt] = //////
                         s.out +=
-    //#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
                             dist > s.outcnt ?
                                 '00' :
-    //#endif
-                                s.out.mid((s.outcnt - dist)*2, 2);//s.out[s.outcnt - dist];
+                                s.out.mid((s.outcnt - dist)*2, 2);
                         s.outcnt++;
                     }
                 //}
@@ -619,8 +463,6 @@ public class Puff {
 
     private integer fixed(State s)
     {
-        //System.debug('called fixed()');
-
         /* build fixed huffman tables if first call (may not be thread safe) */
         if (virgin == 1) {
             Integer symbol;
@@ -745,8 +587,6 @@ public class Puff {
      */
     private Integer dynamic(State s)
     {
-        //System.debug('called dynamic()');
-
         Integer nlen, ndist, ncode;             /* number of lengths in descriptor */
         Integer index;                          /* index of lengths[] */
         Integer err;                            /* construct() return value */
@@ -881,14 +721,7 @@ public class Puff {
              //unsigned long *destlen,        /* amount of output space */
              //const unsigned char *source,   /* pointer to source data pointer */
              //unsigned long *sourcelen)      /* amount of input available */
-    //@future
-    public static void test (){
-
-        String source='CB48CD29C840C25C00';//'F3C8E40200';//CB48CD29C840C25C00//01050099996562616670
-        Integer destlen = 17 ,srclen = source.length()/2;
-        (new Puff(source, srclen, destlen)).inflate();
-    }
-
+    private State s = new State();             /* input/output state */
     public Puff(String source, Integer srclen, Integer destlen){
         /* initialize output state */
         s.out = '';
@@ -903,62 +736,28 @@ public class Puff {
         s.bitcnt = 0;
     }
 
-    State s = new State();             /* input/output state */
     public String inflate()
     {
-        //System.debug('called puff()');
         Integer blockNum = 0;
         Integer last, type;             /* block information */
         Integer err;                    /* return value */
 
-        /* initialize output state */
-        //s.out = '';
-        //s.outlen = destlen;                /* ignored if dest is NIL */
-        //s.outcnt = 0;
-
-        // initialize input state 
-        //s.inStr = source;
-        //s.inlen = sourcelen;
-        //s.incnt = 0;
-        //s.bitbuf = 0;
-        //s.bitcnt = 0;
-
-        /* return if bits() or decode() tries to read past available input */
-        //if (s.env != 0)              //if came back here via longjmp() 
-        //    err = 2;                        /* then skip do-loop, return error */
-        //else {
-            /* process blocks until last block or error */
-            do {
-                //System.debug('Block: '+blockNum++ +' CPU used: '+Limits.getCpuTime());
-                //if (Limits.getCpuTime()>=Limits.getLimitCpuTime()) {break;err=999;}
-                last = bits(s, 1);         /* one if last block */
-                type = bits(s, 2);         /* block type 0..3 */
-                err = type == 0 ?
-                        stored(s) :
-                        (type == 1 ?
-                            fixed(s) :
-                            (type == 2 ?
-                                dynamic(s) :
-                                -1));       /* type == 3, invalid */
-                if (err != 0)
-                    break;                  /* return with error */
-                //System.assert(Limits.getCpuTime()<=.9*Limits.getLimitCpuTime());
-            } while (last == 0);
-        //}
-
-        /* update the lengths and return */
-        //if (err <= 0) {
-        //    destlen = s.outcnt;
-        //    sourcelen = s.incnt;
-        //}
+        /* process blocks until last block or error */
+        do {
+            last = bits(s, 1);         /* one if last block */
+            type = bits(s, 2);         /* block type 0..3 */
+            err = type == 0 ?
+                    stored(s) :
+                    (type == 1 ?
+                        fixed(s) :
+                        (type == 2 ?
+                            dynamic(s) :
+                            -1));       /* type == 3, invalid */
+            if (err != 0)
+                break;                  /* return with error */
+        } while (last == 0);
         
-        System.assert(err == 0);
-        //System.debug('finished with code: '+err);
-        //System.debug('out: '+ s.out); 
-
-        //System.debug('out: '+ EncodingUtil.convertFromHex(s.out).toString()); 
-        
+        System.assertEquals(0, err);
         return s.out;
     }
-
 }
